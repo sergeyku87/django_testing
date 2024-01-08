@@ -24,7 +24,7 @@ class TestHtml(TestCase):
             ('notes:delete', (cls.note.slug,), 'notes/delete.html'),
             ('notes:list', None, 'notes/list.html'),
             ('notes:success', None, 'notes/success.html'),
-            ('users:login',  None, 'registration/login.html'),
+            ('users:login', None, 'registration/login.html'),
             ('users:logout', None, 'registration/logout.html'),
             ('users:signup', None, 'registration/signup.html'),
         )

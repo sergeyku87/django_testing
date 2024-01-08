@@ -52,7 +52,14 @@ pytestmark = pytest.mark.django_db
         ),
     )
 )
-def test_availability_for_template(author_client, name, arg, path, view, comment):
+def test_availability_for_template(
+    author_client,
+    name,
+    arg,
+    path,
+    view,
+    comment
+):
     url = reverse(name, args=arg)
     response = author_client.get(url)
     assert response.resolver_match.func.__name__ == view
