@@ -9,13 +9,47 @@ pytestmark = pytest.mark.django_db
 @pytest.mark.parametrize(
     'name, arg, path, view',
     (
-        ('news:home', None, 'news/home.html', 'NewsList'),
-        ('news:detail', pytest.lazy_fixture('news_id'), 'news/detail.html', 'NewsDetailView'),
-        ('news:edit', pytest.lazy_fixture('news_id'), 'news/edit.html', 'CommentUpdate'),
-        ('news:delete', pytest.lazy_fixture('news_id'), 'news/delete.html', 'CommentDelete'),
-        ('users:login', None, 'registration/login.html', 'LoginView'),
-        ('users:logout', None, 'registration/logout.html', 'LogoutView'),
-        ('users:signup', None, 'registration/signup.html', 'CreateView'),
+        (
+            'news:home',
+            None,
+            'news/home.html',
+            'NewsList'),
+        (
+            'news:detail',
+            pytest.lazy_fixture('news_id'),
+            'news/detail.html',
+            'NewsDetailView'
+        ),
+        (
+            'news:edit',
+            pytest.lazy_fixture('news_id'),
+            'news/edit.html',
+            'CommentUpdate'
+        ),
+        (
+            'news:delete',
+            pytest.lazy_fixture('news_id'),
+            'news/delete.html',
+            'CommentDelete'
+        ),
+        (
+            'users:login',
+            None,
+            'registration/login.html',
+            'LoginView'
+        ),
+        (
+            'users:logout',
+            None,
+            'registration/logout.html',
+            'LogoutView'
+        ),
+        (
+            'users:signup',
+            None,
+            'registration/signup.html',
+            'CreateView'
+        ),
     )
 )
 def test_availability_for_template(author_client, name, arg, path, view, comment):

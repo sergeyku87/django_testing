@@ -29,16 +29,56 @@ class TestHtml(TestCase):
             ('users:signup', None, 'registration/signup.html'),
         )
         cls.contains = (
-            ('notes:home', None, 'Проект YaNote поможет вам не забыть о самом важном!'),
-            ('notes:add', None, 'Добавить'),
-            ('notes:edit', (cls.note.slug,), 'Редактировать'),
-            ('notes:detail', (cls.note.slug,), f'Заметка ID: {cls.note.id}'),
-            ('notes:delete', (cls.note.slug,), f'Удалить заметку {cls.note.id}?'),
-            ('notes:list', None, 'Список заметок'),
-            ('notes:success', None, 'Успешно'),
-            ('users:login', None, 'Войти на сайт'),
-            ('users:logout', None, 'Вы вышли из своей учётной записи. Ждём вас снова!'),
-            ('users:signup', None, 'Зарегистрироваться'),
+            (
+                'notes:home',
+                None,
+                'Проект YaNote поможет вам не забыть о самом важном!'
+            ),
+            (
+                'notes:add',
+                None,
+                'Добавить'
+            ),
+            (
+                'notes:edit',
+                (cls.note.slug,),
+                'Редактировать'
+            ),
+            (
+                'notes:detail',
+                (cls.note.slug,),
+                f'Заметка ID: {cls.note.id}'
+            ),
+            (
+                'notes:delete',
+                (cls.note.slug,),
+                f'Удалить заметку {cls.note.id}?'
+            ),
+            (
+                'notes:list',
+                None,
+                'Список заметок'
+            ),
+            (
+                'notes:success',
+                None,
+                'Успешно'
+            ),
+            (
+                'users:login',
+                None,
+                'Войти на сайт'
+            ),
+            (
+                'users:logout',
+                None,
+                'Вы вышли из своей учётной записи. Ждём вас снова!'
+            ),
+            (
+                'users:signup',
+                None,
+                'Зарегистрироваться'
+            ),
         )
 
     def test_availability_templates(self):
@@ -56,4 +96,4 @@ class TestHtml(TestCase):
                 self.assertContains(
                     response=response,
                     text=content,
-                    )
+                )

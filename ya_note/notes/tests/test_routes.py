@@ -22,19 +22,18 @@ class TestRoutes(TestCase):
         cls.another_user = get_user_model().objects.create(username='David')
         cls.alien_client = Client()
         cls.alien_client.force_login(cls.another_user)
-        
 
     def test_homepage_for_anonymous(self):
         response = self.client.get(reverse('notes:home'))
         self.assertEqual(response.status_code, HTTPStatus.OK)
-    
+
     def test_availability_pages_for_auth_user(self):
         urls = ('notes:list', 'notes:success', 'notes:add',)
         for url in urls:
             response = self.auth_client.get(reverse(url))
             with self.subTest(f'url: {url}'):
                 self.assertEqual(response.status_code, HTTPStatus.OK)
-    
+
     def test_pages_add_edit_delete_only_author(self):
         urls = (
             ('notes:detail', (self.note.slug,)),
