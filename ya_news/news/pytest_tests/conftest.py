@@ -52,7 +52,7 @@ def many_news():
                 date=datetime.today() - timedelta(days=index),
             ) for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
         )
-        )
+    )
     News.objects.all().delete()
 
 
