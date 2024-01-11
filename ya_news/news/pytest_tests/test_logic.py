@@ -1,86 +1,101 @@
-from django.urls import reverse
-
 import pytest
-from http import HTTPStatus
-from pytest_django.asserts import assertRedirects
+from pytest_django.asserts import assertFormError
 
-from news.forms import CommentForm, WARNING
-from news.models import Comment
+from news.forms import BAD_WORDS, WARNING
 
 pytestmark = pytest.mark.django_db
 
 
-def test_dispatch_comment_for_anonymous(form_data, client, news_id):
-    login_url = reverse('users:login')
-    url = reverse('news:detail', args=news_id)
-    redirect_url = f'{login_url}?next={url}'
-    response = client.post(url, data=form_data)
-    assertRedirects(
-        response=response,
-        expected_url=redirect_url,
-        status_code=HTTPStatus.FOUND,
-    )
+FORM_DATA = {
+    'text': 'text_for_form',
+}
 
 
-def test_dispatch_comment_for_auth(form_data, admin_client, news_id):
-    url = reverse('news:detail', args=news_id)
-    response = admin_client.post(url, data=form_data)
-    redirect_url = f'{url}#comments'
-    assertRedirects(
-        response=response,
-        expected_url=redirect_url,
-        status_code=HTTPStatus.FOUND,
-    )
-
-
-def test_for_presence_forbidden_words(form_data):
-    form = CommentForm(data=form_data)
-    assert form.is_valid(), WARNING
-    assert Comment.objects.count() == 0, (
-        'Comment created with forbidden word'
-    )
-
-
-@pytest.mark.parametrize(
-    'path, arg',
-    (
-        ('news:edit', pytest.lazy_fixture('news_id')),
-        ('news:delete', pytest.lazy_fixture('news_id')),
-    )
-)
-def test_availability_edit_delete_for_author(
-    path,
-    arg,
-    form_data,
-    author_client,
-    comment,
-):
-    url = reverse(path, args=arg)
-    redirect_url = f"{reverse('news:detail', args=arg)}#comments"
-    response = author_client.post(url, data=form_data)
-    assertRedirects(
-        response=response,
-        expected_url=redirect_url,
-        status_code=HTTPStatus.FOUND,
-    )
-
-
-@pytest.mark.parametrize(
-    'path, arg',
-    (
-        ('news:edit', pytest.lazy_fixture('news_id')),
-        ('news:delete', pytest.lazy_fixture('news_id')),
-    )
-)
-def test_availability_edit_delete_for_alien(
-    path,
-    arg,
-    comment,
+def test_add_comment_for_auth_user(
     admin_client,
-    form_data
+    admin_user,
+    detail_url,
+    news
 ):
-    url = reverse(path, args=arg)
-    response = admin_client.post(url, data=form_data)
-    assert response.status_code == HTTPStatus.NOT_FOUND, (
-        'Make sure what page edit delet not allowed alien user'
+    """Correct fields for add comment."""
+    count_befor = news.comment_set.count()
+    admin_client.post(detail_url, data=FORM_DATA)
+    assert news.comment_set.count() == count_befor + 1
+    assert news.comment_set.last().text == FORM_DATA['text']
+    assert news.comment_set.last().author == admin_user
+    assert news.comment_set.last().news == news
+
+
+def test_add_comment_for_anonymous_user(client, detail_url, news):
+    """Not authenticated user not can add comment."""
+    count_befor = news.comment_set.count()
+    client.post(detail_url, data=FORM_DATA)
+    assert news.comment_set.count() == count_befor
+
+
+def test_on_delete_for_author(
+    news,
+    comment,
+    author_client,
+    delete_url,
+):
+    """Authenticated user can delete comment."""
+    assert news.comment_set.count() == 1
+    author_client.post(delete_url)
+    assert news.comment_set.count() == 0
+
+
+def test_on_delete_for_anonymous(
+    news,
+    comment,
+    client,
+    delete_url,
+):
+    """Not authenticated user not can delete comment."""
+    comment_befor = news.comment_set.last()
+    assert news.comment_set.count() == 1
+    client.post(delete_url)
+    assert news.comment_set.count() == 1
+    assert news.comment_set.last().news == comment_befor.news
+    assert news.comment_set.last().author == comment_befor.author
+    assert news.comment_set.last().text == comment_befor.text
+
+
+def test_on_edit_for_author(
+    author_client,
+    author,
+    news,
+    comment,
+    edit_url,
+):
+    """Author commetn can edit comment."""
+    author_client.post(edit_url, data=FORM_DATA)
+    assert news.comment_set.last().text == FORM_DATA['text']
+    assert news.comment_set.last().news == news
+    assert news.comment_set.last().author == author
+
+
+def test_on_edit_for_notauthor(
+    admin_client,
+    news,
+    comment,
+    edit_url,
+):
+    """Not author commetn not can edit comment."""
+    comment_befor = news.comment_set.last()
+    admin_client.post(edit_url, data=FORM_DATA)
+    assert comment_befor.text == news.comment_set.last().text
+    assert comment_befor.news == news.comment_set.last().news
+    assert comment_befor.author == news.comment_set.last().author
+
+
+def test_for_presence_forbidden_words(admin_client, detail_url):
+    """Comment with forbidden words not can created."""
+    data = FORM_DATA.copy()
+    data['text'] = BAD_WORDS[0]
+    assertFormError(
+        response=admin_client.post(detail_url, data=data),
+        form='form',
+        field='text',
+        errors=WARNING,
     )

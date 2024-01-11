@@ -82,6 +82,7 @@ class TestHtml(TestCase):
         )
 
     def test_availability_templates(self):
+        """Correct work templates."""
         for name, arg, template in self.name_paths:
             url = reverse(name, args=arg)
             response = self.auth_client.get(url)
@@ -89,6 +90,7 @@ class TestHtml(TestCase):
                 self.assertTemplateUsed(response, template)
 
     def test_contains_pages(self):
+        """Templates transmit correct contains."""
         for name, arg, content in self.contains:
             url = reverse(name, args=arg)
             response = self.auth_client.get(url)

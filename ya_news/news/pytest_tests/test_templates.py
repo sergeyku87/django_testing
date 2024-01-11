@@ -1,5 +1,3 @@
-from django.urls import reverse
-
 import pytest
 from pytest_django.asserts import assertTemplateUsed, assertContains
 
@@ -7,46 +5,39 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.mark.parametrize(
-    'name, arg, path, view',
+    'url, path, view',
     (
         (
-            'news:home',
-            None,
+            pytest.lazy_fixture('home_url'),
             'news/home.html',
             'NewsList'),
         (
-            'news:detail',
-            pytest.lazy_fixture('news_id'),
+            pytest.lazy_fixture('detail_url'),
             'news/detail.html',
             'NewsDetailView'
         ),
         (
-            'news:edit',
-            pytest.lazy_fixture('news_id'),
+            pytest.lazy_fixture('edit_url'),
             'news/edit.html',
             'CommentUpdate'
         ),
         (
-            'news:delete',
-            pytest.lazy_fixture('news_id'),
+            pytest.lazy_fixture('delete_url'),
             'news/delete.html',
             'CommentDelete'
         ),
         (
-            'users:login',
-            None,
+            pytest.lazy_fixture('login_url'),
             'registration/login.html',
             'LoginView'
         ),
         (
-            'users:logout',
-            None,
+            pytest.lazy_fixture('logout_url'),
             'registration/logout.html',
             'LogoutView'
         ),
         (
-            'users:signup',
-            None,
+            pytest.lazy_fixture('signup_url'),
             'registration/signup.html',
             'CreateView'
         ),
@@ -54,27 +45,26 @@ pytestmark = pytest.mark.django_db
 )
 def test_availability_for_template(
     author_client,
-    name,
-    arg,
     path,
+    url,
     view,
-    comment
+    comment,
 ):
-    url = reverse(name, args=arg)
+    """Accordance name url, path url, view function."""
     response = author_client.get(url)
     assert response.resolver_match.func.__name__ == view
     assertTemplateUsed(response, path)
 
 
 @pytest.mark.parametrize(
-    'path, arg',
+    'url',
     (
-        ('news:home', None),
-        ('news:detail', pytest.lazy_fixture('news_id')),
+        (pytest.lazy_fixture('home_url')),
+        (pytest.lazy_fixture('detail_url')),
     )
 )
-def test_contains_pages(news, path, arg, admin_client):
-    url = reverse(path, args=arg)
+def test_contains_pages(news, url, admin_client):
+    """On pages displayed correct contains."""
     response = admin_client.get(url)
     assertContains(
         response=response,
@@ -83,11 +73,15 @@ def test_contains_pages(news, path, arg, admin_client):
 
 
 @pytest.mark.parametrize(
-    'path',
-    ('users:login', 'users:signup')
+    'url',
+    (
+        pytest.lazy_fixture('login_url'),
+        pytest.lazy_fixture('signup_url'),
+    )
 )
-def test_correct_form_for_page_auth(client, path):
-    response = client.get(reverse(path))
+def test_correct_form_for_page_auth(client, url):
+    """Pages login, signup contain form to fill in."""
+    response = client.get(url)
     form = response.context.get('form')
     assert ('password' or 'password1') and 'username' in form.fields, (
         'Make sure what fields available for input'

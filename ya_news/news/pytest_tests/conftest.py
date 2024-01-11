@@ -1,5 +1,8 @@
 from django.conf import settings
+from django.test import Client
+from django.urls import reverse
 from django.utils import timezone
+
 
 import pytest
 from datetime import datetime, timedelta
@@ -14,52 +17,43 @@ def author(django_user_model):
 
 
 @pytest.fixture
-def author_client(author, client):
-    client.force_login(author)
-    return client
+def author_client(author):
+    author_client = Client()
+    author_client.force_login(author)
+    return author_client
 
 
 @pytest.fixture
 def news():
-    return News.objects.create(
+    yield News.objects.create(
         title='test title',
         text='test text',
     )
+    News.objects.all().delete()
 
 
 @pytest.fixture
 def comment(news, author):
-    return Comment.objects.create(
+    yield Comment.objects.create(
         news=news,
         author=author,
         text='some text',
     )
-
-
-@pytest.fixture
-def form_data(news, author):
-    return {
-        'news': news,
-        'author': author,
-        'text': 'text_for_form',
-    }
-
-
-@pytest.fixture
-def news_id(news):
-    return news.id,
+    Comment.objects.all().delete()
 
 
 @pytest.fixture
 def many_news():
-    news = [
-        News(
-            title=f'title {index}',
-            text=f'text {index}',
-            date=datetime.today() - timedelta(days=index),
-        ) for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
-    ]
-    return News.objects.bulk_create(news)
+    yield News.objects.bulk_create(
+        (
+            News(
+                title=f'title {index}',
+                text=f'text {index}',
+                date=datetime.today() - timedelta(days=index),
+            ) for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
+        )
+        )
+    News.objects.all().delete()
 
 
 @pytest.fixture
@@ -72,4 +66,40 @@ def many_comments(news, admin_user):
         )
         comment.created = timezone.now() - timedelta(days=index)
         comment.save()
-    return Comment
+    yield Comment.objects.all()
+    Comment.objects.all().delete()
+
+
+@pytest.fixture
+def delete_url(news):
+    return reverse('news:delete', args=(news.id,))
+
+
+@pytest.fixture
+def edit_url(news):
+    return reverse('news:edit', args=(news.id,))
+
+
+@pytest.fixture
+def home_url():
+    return reverse('news:home')
+
+
+@pytest.fixture
+def detail_url(news):
+    return reverse('news:detail', args=(news.id,))
+
+
+@pytest.fixture
+def login_url():
+    return reverse('users:login')
+
+
+@pytest.fixture
+def logout_url():
+    return reverse('users:logout')
+
+
+@pytest.fixture
+def signup_url():
+    return reverse('users:signup')

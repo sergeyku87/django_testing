@@ -1,70 +1,51 @@
-from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
-from django.urls import reverse
-
 from notes.models import Note
 
+from .fixtures import FixtureMixin
 
-class TestContent(TestCase):
-    COUNT_NOTES = 5
 
-    @classmethod
-    def setUpTestData(cls):
-        cls.user = get_user_model().objects.create(username='Bob')
-        cls.author_client = Client()
-        cls.author_client.force_login(cls.user)
-
-        cls.alien_user = get_user_model().objects.create(username='David')
-        cls.alien_client = Client()
-        cls.alien_client.force_login(cls.alien_user)
-
-        cls.notes_user = [
-            Note.objects.create(
-                title=f'title {index}',
-                text=f'text {index}',
-                slug=f'title-{user}-{index}',
-                author=user,
-            )
-            for user in (cls.user, cls.alien_user)
-            for index in range(cls.COUNT_NOTES)
-        ]
-        cls.data = {
-            'title': 'probe title',
-            'text': 'probe text',
-            'slug': 'probe-title',
-            'author': cls.user
-        }
-
+class TestContent(FixtureMixin):
     def test_add_note_displayed_to_page_list(self):
-        url = reverse('notes:list')
-        resp = self.author_client.get(url)
-        count_notes_befor = len(resp.context.get('object_list'))
+        """Adding note on page notes when request post."""
+        notes_befor = Note.objects.count()
+        self.auth_client.post(self.add_url, data=self.data)
+        notes_after = Note.objects.count()
+        self.assertLess(notes_befor, notes_after)
 
-        self.author_client.post(reverse('notes:add'), data=self.data)
+    def test_for_author_notes(self):
+        """Only author have access to their notes."""
+        self.many_note_in_db()
+        notes = Note.objects.filter(author=self.user)
+        response = self.auth_client.get(self.list_url)
+        obj_lst = response.context.get('object_list')
+        self.assertEqual(notes.count(), obj_lst.count())
+        for i, j in zip(notes, obj_lst):
+            with self.subTest():
+                self.assertEqual(i.title, j.title)
+                self.assertEqual(i.text, j.text)
+                self.assertEqual(i.slug, j.slug)
+                self.assertEqual(i.author, j.author)
 
-        response = self.author_client.get(url)
-        count_notes_after = len(response.context.get('object_list'))
-        self.assertLess(count_notes_befor, count_notes_after)
-
-    def test_separate_notes_for_different_users(self):
-        clients = (
-            (self.author_client, self.user),
-            (self.alien_client, self.alien_user)
-        )
-        for client, user in clients:
-            response = client.get(reverse('notes:list'))
-            obj_list = response.context.get('object_list')
-            for obj in obj_list:
-                with self.subTest():
-                    self.assertEqual(obj.author.username, user.username)
+    def test_personal_only_notes(self):
+        """Alien content not available for authors."""
+        self.many_note_in_db()
+        user = self.auth_client.get(self.list_url)
+        alien = self.alien_client.get(self.list_url)
+        first = set([
+            obj.author.username for obj in user.context.get('object_list')
+        ])
+        second = set([
+            obj.author.username for obj in alien.context.get('object_list')
+        ])
+        self.assertEqual(len(first), len(second))
+        self.assertNotEqual(first, second)
 
     def test_exist_form_for_pages_edit_delete(self):
+        """Availability form for users."""
         urls = (
-            ('notes:add', None),
-            ('notes:edit', (self.notes_user[0].slug,)),
+            self.add_url,
+            self.edit_url,
         )
-        for path, arg in urls:
-            url = reverse(path, args=arg)
-            response = self.author_client.get(url)
-            with self.subTest():
+        for url in urls:
+            with self.subTest(f'url: {url}'):
+                response = self.auth_client.get(url)
                 self.assertIn('form', response.context)

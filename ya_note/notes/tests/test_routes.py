@@ -1,84 +1,70 @@
-from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
-from django.urls import reverse
-
 from http import HTTPStatus
 
-from notes.models import Note
+from .fixtures import FixtureMixin
 
 
-class TestRoutes(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.user = get_user_model().objects.create(username='Bob')
-        cls.auth_client = Client()
-        cls.auth_client.force_login(cls.user)
-        cls.note = Note.objects.create(
-            title='test 1',
-            text='test t1',
-            slug='test-1',
-            author=cls.user
-        )
-        cls.another_user = get_user_model().objects.create(username='David')
-        cls.alien_client = Client()
-        cls.alien_client.force_login(cls.another_user)
-
+class TestRoutes(FixtureMixin):
     def test_homepage_for_anonymous(self):
-        response = self.client.get(reverse('notes:home'))
+        """Can watch page not authenticated user."""
+        response = self.client.get(self.home_url)
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_availability_pages_for_auth_user(self):
-        urls = ('notes:list', 'notes:success', 'notes:add',)
+        """Can watch page authenticated user."""
+        urls = (
+            self.list_url,
+            self.success_url,
+            self.add_url,
+        )
         for url in urls:
-            response = self.auth_client.get(reverse(url))
             with self.subTest(f'url: {url}'):
+                response = self.auth_client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_pages_add_edit_delete_only_author(self):
+        """Permission modify content only at author."""
         urls = (
-            ('notes:detail', (self.note.slug,)),
-            ('notes:edit', (self.note.slug,)),
-            ('notes:delete', (self.note.slug,)),
+            self.detail_url,
+            self.edit_url,
+            self.delete_url,
         )
         client_status = (
             (self.auth_client, HTTPStatus.OK),
             (self.alien_client, HTTPStatus.NOT_FOUND),
             (self.client, HTTPStatus.FOUND),
         )
-        for path, arg in urls:
+        for url in urls:
             for client, status in client_status:
-                url = reverse(path, args=arg)
-                response = client.get(url)
                 with self.subTest(f'client: {client}, status: {status}'):
+                    response = client.get(url)
                     self.assertEqual(response.status_code, status)
 
     def test_redirect_for_anonymous(self):
+        """Not authenticated user sent to the authentication page."""
         urls = (
-            ('notes:list', None),
-            ('notes:success', None),
-            ('notes:add', None),
-            ('notes:detail', (self.note.slug,)),
-            ('notes:edit', (self.note.slug,)),
-            ('notes:delete', (self.note.slug,)),
+            self.list_url,
+            self.success_url,
+            self.add_url,
+            self.detail_url,
+            self.edit_url,
+            self.delete_url,
         )
-        url_login = reverse('users:login')
-
-        for path, arg in urls:
-            url = reverse(path, args=arg)
-            response = self.client.get(url)
-            redirect_url = f'{url_login}?next={url}'
-            with self.subTest(f'path: {path}, arg: {arg}'):
+        for url in urls:
+            redirect_url = f'{self.login_url}?next={url}'
+            with self.subTest(f'url: {url}'):
+                response = self.client.get(url)
                 self.assertRedirects(response, redirect_url)
 
     def test_availability_pages_auth_for_all(self):
+        """Pages entrance exit registration available to everyone."""
         urls = (
-            'users:login',
-            'users:logout',
-            'users:signup',
+            self.login_url,
+            self.login_url,
+            self.signup_url,
         )
         clients = (self.client, self.auth_client)
         for url in urls:
             for client in clients:
-                response = client.get(reverse(url))
                 with self.subTest(f'client: {client}, url: {url}'):
+                    response = client.get(url)
                     self.assertEqual(response.status_code, HTTPStatus.OK)
