@@ -38,7 +38,7 @@ def test_chronological_ordering_comments(
 ):
     """Order comments from old to fresh."""
     dates = [
-        i.created for i in client.get(
+        comment.created for comment in client.get(
             detail_url
         ).context.get('object').comment_set.all()
     ]

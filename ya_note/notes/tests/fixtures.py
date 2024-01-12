@@ -23,24 +23,22 @@ class FixtureMixin(TestCase):
             'slug': 'test-1',
             'author': cls.user,
         }
-
-    def setUp(self):
-        self.note = Note.objects.create(
+        cls.note = Note.objects.create(
             title='test title',
             text='test text',
             slug='test-title',
-            author=self.user
+            author=cls.user
         )
-        self.list_url = reverse('notes:list')
-        self.add_url = reverse('notes:add')
-        self.home_url = reverse('notes:home')
-        self.success_url = reverse('notes:success')
-        self.detail_url = reverse('notes:detail', args=(self.note.slug,))
-        self.edit_url = reverse('notes:edit', args=(self.note.slug,))
-        self.delete_url = reverse('notes:delete', args=(self.note.slug,))
-        self.login_url = reverse('users:login')
-        self.logout_url = reverse('users:logout')
-        self.signup_url = reverse('users:signup')
+        cls.list_url = reverse('notes:list')
+        cls.add_url = reverse('notes:add')
+        cls.home_url = reverse('notes:home')
+        cls.success_url = reverse('notes:success')
+        cls.detail_url = reverse('notes:detail', args=(cls.note.slug,))
+        cls.edit_url = reverse('notes:edit', args=(cls.note.slug,))
+        cls.delete_url = reverse('notes:delete', args=(cls.note.slug,))
+        cls.login_url = reverse('users:login')
+        cls.logout_url = reverse('users:logout')
+        cls.signup_url = reverse('users:signup')
 
     def tearDown(self):
         Note.objects.all().delete()
@@ -59,3 +57,7 @@ class FixtureMixin(TestCase):
 
     def clean_note_db(self):
         Note.objects.all().delete()
+
+    def forced_creation_one_note(self):
+        self.clean_note_db()
+        self.note.save()

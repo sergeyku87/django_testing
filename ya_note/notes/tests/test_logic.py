@@ -1,5 +1,3 @@
-from pytils.translit import slugify
-
 from notes.models import Note
 
 from .fixtures import FixtureMixin
@@ -19,7 +17,7 @@ class TestLogic(FixtureMixin):
 
     def test_add_for_anonymous(self):
         """Safety data in database."""
-        self.assertEqual(Note.objects.count(), 1)
+        self.forced_creation_one_note()
         note_before = Note.objects.last()
         self.client.post(self.add_url, data=self.data)
         self.assertEqual(Note.objects.count(), 1)
@@ -40,7 +38,7 @@ class TestLogic(FixtureMixin):
         )
         self.assertEqual(
             Note.objects.last().slug,
-            slugify(Note.objects.last().title)
+            'field-title'
         )
 
     def test_edit_your_notes(self):
@@ -50,20 +48,22 @@ class TestLogic(FixtureMixin):
         edit_note = Note.objects.last()
         self.assertEqual(edit_note.title, new_data['title'])
         self.assertEqual(edit_note.text, new_data['text'])
+        self.assertEqual(edit_note.slug, 'new-title')
+        self.assertEqual(edit_note.author, self.user)
 
     def test_delete_your_notes(self):
         """Your notes available delete for author."""
-        self.assertEqual(Note.objects.count(), 1)
+        self.forced_creation_one_note()
         self.auth_client.post(self.delete_url)
         self.assertEqual(Note.objects.count(), 0)
 
-    def test_edit_delete_alien_notes(self):
+    def test_modify_alien_notes(self):
         """Another users can not edit delete notes."""
-        self.assertEqual(Note.objects.count(), 1)
+        self.forced_creation_one_note()
         notes_before = Note.objects.last()
         for url in (self.edit_url, self.delete_url):
             with self.subTest(f'url: {url}'):
-                self.alien_client.post(self.delete_url)
+                self.alien_client.post(url)
                 notes_after = Note.objects.last()
                 self.assertEqual(Note.objects.count(), 1)
                 self.assertEqual(notes_before.title, notes_after.title)
@@ -72,7 +72,7 @@ class TestLogic(FixtureMixin):
 
     def test_unique_slug(self):
         """Not possible create notes with same slug."""
-        self.assertEqual(Note.objects.count(), 1)
+        self.forced_creation_one_note()
         old_slug_note = Note.objects.last().slug
         self.auth_client.post(self.add_url, data={
             'title': 'some title',

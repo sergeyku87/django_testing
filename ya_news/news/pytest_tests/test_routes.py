@@ -32,7 +32,7 @@ def test_availability_pages_for_anonymous(url, client, news):
         pytest.lazy_fixture('delete_url'),
     )
 )
-def test_pages_edit_delete_comment_for_anonymoys(
+def test_private_pages_for_anonymoys(
     url,
     client,
     login_url,
@@ -60,7 +60,7 @@ def test_pages_edit_delete_comment_for_anonymoys(
         (pytest.lazy_fixture('admin_client'), HTTPStatus.NOT_FOUND),
     )
 )
-def test_pages_edit_del_comment_for_author_and_notauthor(
+def test_pages_with_different_level_available_for_users(
     url,
     caller,
     status,
@@ -106,7 +106,7 @@ def test_dispatch_comment_for_auth(
         (pytest.lazy_fixture('delete_url')),
     )
 )
-def test_request_on_edit_delete_for_author(
+def test_request_on_modify_for_author(
     url,
     author_client,
     comment,
@@ -129,7 +129,7 @@ def test_request_on_edit_delete_for_author(
         (pytest.lazy_fixture('delete_url')),
     )
 )
-def test_request_edit_delete_for_alien(
+def test_request_modify_for_alien(
     url,
     comment,
     admin_client,
