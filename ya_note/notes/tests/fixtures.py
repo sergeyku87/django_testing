@@ -14,6 +14,10 @@ class FixtureMixin(TestCase):
         cls.auth_client = Client()
         cls.auth_client.force_login(cls.user)
 
+        cls.third_user = get_user_model().objects.create(username='Tom')
+        cls.user_without_note = Client()
+        cls.user_without_note.force_login(cls.third_user)
+
         cls.alien_user = get_user_model().objects.create(username='David')
         cls.alien_client = Client()
         cls.alien_client.force_login(cls.alien_user)
@@ -61,3 +65,8 @@ class FixtureMixin(TestCase):
     def forced_creation_one_note(self):
         self.clean_note_db()
         self.note.save()
+
+    def data_without_slug(self):
+        data = self.data.copy()
+        del data['slug']
+        return data

@@ -45,12 +45,12 @@ def comment(news, author):
 @pytest.fixture
 def many_news():
     yield News.objects.bulk_create(
-        News(
-            title=f'title {index}',
-            text=f'text {index}',
-            date=datetime.today() - timedelta(days=index),
-        ) for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
-    )
+            News(
+                title=f'title {index}',
+                text=f'text {index}',
+                date=datetime.today() - timedelta(days=index),
+            ) for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
+        )
     News.objects.all().delete()
 
 

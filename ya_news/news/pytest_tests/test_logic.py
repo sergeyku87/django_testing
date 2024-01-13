@@ -19,7 +19,6 @@ def test_add_comment_for_auth_user(
 ):
     """Correct fields for add comment."""
     news.comment_set.all().delete()
-    assert news.comment_set.count() == 0
     admin_client.post(detail_url, data=FORM_DATA)
     assert news.comment_set.count() == 1
     comment = news.comment_set.last()
@@ -31,7 +30,6 @@ def test_add_comment_for_auth_user(
 def test_add_comment_for_anonymous_user(client, detail_url, news):
     """Not authenticated user not can add comment."""
     news.comment_set.all().delete()
-    assert news.comment_set.count() == 0
     client.post(detail_url, data=FORM_DATA)
     assert news.comment_set.count() == 0
 

@@ -1,3 +1,5 @@
+from pytils.translit import slugify
+
 from notes.models import Note
 
 from .fixtures import FixtureMixin
@@ -30,15 +32,10 @@ class TestLogic(FixtureMixin):
     def test_auto_fill_field_slug(self):
         """Formation slug from field title."""
         self.clean_note_db()
-        self.auth_client.post(self.add_url, data={
-            'title': 'field title',
-            'text': 'field text',
-            'author': self.user,
-        }
-        )
+        self.auth_client.post(self.add_url, data=self.data_without_slug())
         self.assertEqual(
             Note.objects.last().slug,
-            'field-title'
+            slugify(self.data_without_slug()['title'])
         )
 
     def test_edit_your_notes(self):

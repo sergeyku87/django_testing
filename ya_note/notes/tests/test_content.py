@@ -18,24 +18,18 @@ class TestContent(FixtureMixin):
         response = self.auth_client.get(self.list_url)
         obj_lst = response.context.get('object_list')
         self.assertEqual(notes.count(), obj_lst.count())
-        for note_1, note_2 in zip(notes, obj_lst):
+        for note_from_db, note_from_context in zip(notes, obj_lst):
             with self.subTest():
-                self.assertEqual(note_1.title, note_2.title)
-                self.assertEqual(note_1.text, note_2.text)
-                self.assertEqual(note_1.slug, note_2.slug)
-                self.assertEqual(note_1.author, note_2.author)
+                self.assertEqual(note_from_db.title, note_from_context.title)
+                self.assertEqual(note_from_db.text, note_from_context.text)
+                self.assertEqual(note_from_db.slug, note_from_context.slug)
+                self.assertEqual(note_from_db.author, note_from_context.author)
 
     def test_personal_only_notes(self):
         """Alien content not available for authors."""
-        self.many_note_in_db()
-        user = self.auth_client.get(self.list_url)
-        alien = self.alien_client.get(self.list_url)
-        inner_join = user.context.get(
-            'object_list'
-        ).intersection(
-            alien.context.get('object_list')
-        )
-        self.assertFalse(inner_join)
+        self.many_note_in_db()  # user has 6 notes, alien has 5 notes
+        third = self.user_without_note.get(self.list_url)
+        self.assertFalse(third.context.get('object_list'))
 
     def test_exist_form_for_pages_edit_delete(self):
         """Availability form for users."""
